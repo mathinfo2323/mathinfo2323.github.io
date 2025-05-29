@@ -50,6 +50,67 @@ document.addEventListener("keyup", function (e) {
 
 key_allocate=[['a','A'],['s','S'],['k','K'],['l','L']];
 
+let button_mode={
+    message_mode:0,
+    image_mode:1
+}
+class game_button{
+    constructor(mode,x,y){
+        this.mode=mode;
+        this.x=x;
+        this.y=y;
+        this.w=0;
+        this.z=0;
+        this.color='black';
+        this.text="No Text";
+        this.textcolor='white';
+        this.img=null;
+    }
+    set_size(w,h){
+        this.w=w;
+        this.h=h;
+    }
+    set_color(color){
+        this.color=color;
+    }
+    set_text(text){
+        this.text=text;
+    }
+    set_textcolor(color){
+        this.textcolor=color;
+    }
+    set_image(img){
+        this.img=img;
+    }
+    draw(){
+        switch(this.mode){
+            case button_mode.message_mode:
+                drawrect(this.x,this.y,this.w,this.h,this.color);
+                ctx.fillStyle=this.textcolor;
+                ctx.font=`${this.h}px serif`;
+                ctx.fillText(this.text,this.x,this.y);
+                break;
+            case button_mode.image_mode:
+                if(this.img!=null){
+
+                }
+                break;
+        }
+    }
+    touch(){
+        console.log(`${this.x},${this.y},${this.w},${this.h},${touch_valid}`);
+        if(touch_valid){
+            touch_valid=false;
+            console.log("touch!");
+            return touch_rect(touch_x,touch_y,this.x,this.y,this.w,this.h);
+           
+        }
+        else{
+            return false;
+        }
+    }
+}
+
 class virtual_gamepad{
     constructor(length) {
     // コンストラクタ: インスタンスを作成する際に実行されるメソッド
@@ -69,15 +130,10 @@ class virtual_gamepad{
             this.LineInput[loop]=keys[key_allocate[loop][0]] || keys[key_allocate[loop][1]];
         }
         if(touch_valid){
-            console.log("called");
             touch_valid=false;
             for(loop=0;loop<this.LineInput.length;loop++){
-                this.LineInput[loop]=touch_rect(touch_x,touch_y,canvas.width/this.line_length*loop,canvas.height/notes_length*(notes_length-1),canvas.width/this.line_length,canvas.height/notes_length);
-                console.log(canvas.width/this.line_length*loop);
-                console.log(canvas.height/notes_length*(notes_length-1));
-                console.log(canvas.width/this.line_length);
-                console.log(canvas.height/notes_length);
-                console.log(this.LineInput[loop]);
+                this.LineInput[loop]=touch_rect(touch_x,touch_y,canvas.width/this.line_length*loop,0,canvas.width/this.line_length,canvas.height);
+                
             }
         }
     }
@@ -210,6 +266,12 @@ class regular_mode_scene extends base_scene{//コピペして使う
             this.notes[loop]=getRandomInt(40)%4;
         }
         this.now_phase=game_phase.playing;
+
+        this.restart_button=new game_button(button_mode.message_mode,200,700);
+        this.restart_button.set_size(480,48);
+        this.restart_button.set_color('green');
+        this.restart_button.set_text("リトライ");
+        this.restart_button.set_textcolor('black');
     }
     draw(){
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -228,6 +290,7 @@ class regular_mode_scene extends base_scene{//コピペして使う
             ctx.font = "64px serif";
             ctx.fillStyle = 'red';
             ctx.fillText("GAME OVER", 100, 200);
+            this.restart_button.draw();
         }
         ctx.font = "48px serif";
         ctx.fillStyle = 'red';
@@ -237,7 +300,10 @@ class regular_mode_scene extends base_scene{//コピペして使う
     }
     process(){
         this.basic_refresh(this.gamepad_regular.line_length);
-        this.gamepad.refresh(this.gamepad.line_length);
+        if(this.now_phase==game_phase.playing){
+            this.gamepad.refresh(this.gamepad.line_length);
+        }
+        
         this.counter1+=1;
         switch(this.now_phase){
             case game_phase.playing:
@@ -261,9 +327,14 @@ class regular_mode_scene extends base_scene{//コピペして使う
                     array_slide(this.notes,false);
                     this.notes[0]=getRandomInt(40)%4;
                 }
-
                 break;
             case game_phase.gameover:
+                if(this.restart_button.touch()){
+                    console.log("change");
+                    change_scene(scene_name.regular_mode);
+                }
+                else{
+                }
                 break;
         }
         if(this.counter1>10 && 0){
@@ -274,7 +345,7 @@ class regular_mode_scene extends base_scene{//コピペして使う
         }
     }
     change_process(next_scene){
-        switch(nextscene){
+        switch(next_scene){
             case scene_name.title:
                 break;
         }
@@ -283,12 +354,13 @@ class regular_mode_scene extends base_scene{//コピペして使う
 
 function change_scene(next_scene){
     scene.change_process(next_scene);
-    switch(now_scene){
+    scene=null;
+    switch(next_scene){
         case scene_name.title:
-            delete scene;
             scene=new title_scene();
             break;
         case scene_name.regular_mode:
+            scene=new regular_mode_scene();
             break;
     }
 }
