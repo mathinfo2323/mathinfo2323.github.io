@@ -7,7 +7,6 @@ let touch_x=0;
 let touch_y=0;
 let touch_valid=false;
 
-document.addEventListener("dblclick",function(e){e.preventDefault();},{passive: false});
 window.addEventListener( "DOMContentLoaded" , ()=> {
 
             const cvs = document.getElementById("gameCanvas");
